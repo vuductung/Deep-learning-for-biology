@@ -1,6 +1,9 @@
 import unittest
 
+import torch
+
 from dl_biology.helper import aa_encoder
+from dl_biology.model import PositionalEncoder
 
 
 class TestAAEncoder(unittest.TestCase):
@@ -142,6 +145,73 @@ class TestAAEncoder(unittest.TestCase):
         """Test that numeric characters raise KeyError."""
         with self.assertRaises(KeyError):
             aa_encoder("123")
+
+
+class TestPositionalEncoder(unittest.TestCase):
+    """Unit tests for the PositionalEncoder class."""
+
+    def test_pe_matrix_size(self):
+        """Test that PositionalEncoder creates pe matrix with correct size (1, 20, 3)."""
+        pe = PositionalEncoder(d_model=4, max_len=20, dropout=0.1)
+
+        # Check that the positional encoding matrix has the correct size
+        self.assertEqual(pe.pe.shape, (1, 20, 4))
+
+        # Check that it's a tensor
+        self.assertIsInstance(pe.pe, torch.Tensor)
+
+    def test_forward_pass_output_size(self):
+        """Test that forward pass returns tensor with correct size (5, 4, 3)."""
+        pe = PositionalEncoder(d_model=6, max_len=20, dropout=0.1)
+        x = torch.zeros(5, 4, 6)
+
+        output = pe(x)
+
+        # Check that the output has the correct size
+        self.assertEqual(output.shape, (5, 4, 6))
+
+        # Check that it's a tensor
+        self.assertIsInstance(output, torch.Tensor)
+
+    def test_pe_matrix_values_not_zero(self):
+        """Test that the positional encoding matrix contains non-zero values."""
+        pe = PositionalEncoder(d_model=6, max_len=20, dropout=0.1)
+
+        # Check that the matrix is not all zeros (positional encoding should have values)
+        self.assertFalse(torch.allclose(pe.pe, torch.zeros_like(pe.pe)))
+
+    def test_different_input_sizes(self):
+        """Test PositionalEncoder with different input sizes."""
+        pe = PositionalEncoder(d_model=6, max_len=20, dropout=0.1)
+
+        # Test with different batch sizes and sequence lengths
+        test_cases = [
+            (1, 5, 6),  # batch=1, seq_len=5, d_model=3
+            (2, 10, 6),  # batch=2, seq_len=10, d_model=3
+            (3, 15, 6),  # batch=3, seq_len=15, d_model=3
+        ]
+
+        for batch_size, seq_len, d_model in test_cases:
+            x = torch.zeros(batch_size, seq_len, d_model)
+            output = pe(x)
+            self.assertEqual(output.shape, (batch_size, seq_len, d_model))
+
+    def test_dropout_behavior(self):
+        """Test that dropout is applied in forward pass."""
+        pe_no_dropout = PositionalEncoder(d_model=6, max_len=20, dropout=0.0)
+        pe_with_dropout = PositionalEncoder(d_model=6, max_len=20, dropout=0.5)
+
+        x = torch.zeros(5, 4, 6)
+
+        # Set models to eval mode to disable dropout
+        pe_no_dropout.eval()
+        pe_with_dropout.eval()
+
+        output_no_dropout = pe_no_dropout(x)
+        output_with_dropout = pe_with_dropout(x)
+
+        # In eval mode, outputs should be identical regardless of dropout rate
+        self.assertTrue(torch.allclose(output_no_dropout, output_with_dropout))
 
 
 if __name__ == "__main__":

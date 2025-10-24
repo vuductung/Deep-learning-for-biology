@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dl_biology"
+version = "0.1.0"
+description = "Deep learning applications for biological sciences"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.0",
+    "torch>=2.0",
+    "scikit-learn>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=24.0",
+    "isort>=5.0",
+    "pre-commit>=3.0",
+]
+
+[tool.setuptools]
+packages = ["dl_biology"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+known_third_party = ["torch", "jax", "flax", "transformers", "numpy", "pandas", "sklearn"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
