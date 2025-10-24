@@ -3,7 +3,7 @@ import unittest
 import torch
 
 from dl_biology.helper import aa_encoder
-from dl_biology.model import PositionalEncoder
+from dl_biology.model import PositionalEncoder, TransformerEncoderRt
 
 
 class TestAAEncoder(unittest.TestCase):
@@ -212,6 +212,221 @@ class TestPositionalEncoder(unittest.TestCase):
 
         # In eval mode, outputs should be identical regardless of dropout rate
         self.assertTrue(torch.allclose(output_no_dropout, output_with_dropout))
+
+
+class TestTransformerEncoderRt(unittest.TestCase):
+    """Unit tests for the TransformerEncoderRt class."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.vocab_size = 21  # 20 amino acids + padding
+        self.d_model = 128
+        self.dim_feedforward = 512
+        self.nhead = 8
+        self.dropout = 0.1
+        self.max_len = 100
+        self.num_layers = 2
+
+    def test_transformer_initialization(self):
+        """Test that TransformerEncoderRt initializes correctly."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        # Check that the model was created successfully
+        self.assertIsInstance(transformer, TransformerEncoderRt)
+        self.assertEqual(transformer.d_model, self.d_model)
+
+    def test_forward_pass_output_shape(self):
+        """Test that forward pass returns correct output shape."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        batch_size = 4
+        seq_len = 10
+
+        # Create test input
+        x = torch.randint(1, self.vocab_size, (batch_size, seq_len))  # Skip padding token (0)
+        lengths = torch.tensor([seq_len] * batch_size)
+
+        output = transformer(x, lengths)
+
+        # Check output shape
+        self.assertEqual(output.shape, (batch_size,))
+        self.assertIsInstance(output, torch.Tensor)
+
+    def test_different_batch_sizes(self):
+        """Test TransformerEncoderRt with different batch sizes."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        seq_len = 15
+        batch_sizes = [1, 2, 4, 8]
+
+        for batch_size in batch_sizes:
+            x = torch.randint(1, self.vocab_size, (batch_size, seq_len))
+            lengths = torch.tensor([seq_len] * batch_size)
+
+            output = transformer(x, lengths)
+
+            # Check output shape
+            self.assertEqual(output.shape, (batch_size,))
+
+    def test_different_sequence_lengths(self):
+        """Test TransformerEncoderRt with different sequence lengths."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        batch_size = 3
+        seq_lengths = [5, 10, 20]
+
+        for seq_len in seq_lengths:
+            x = torch.randint(1, self.vocab_size, (batch_size, seq_len))
+            lengths = torch.tensor([seq_len] * batch_size)
+
+            output = transformer(x, lengths)
+
+            # Check output shape
+            self.assertEqual(output.shape, (batch_size,))
+
+    def test_variable_sequence_lengths(self):
+        """Test TransformerEncoderRt with variable sequence lengths in the same batch."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        batch_size = 4
+        max_seq_len = 20
+        seq_lengths = [5, 10, 15, 20]
+
+        # Create input with padding
+        x = torch.zeros(batch_size, max_seq_len, dtype=torch.long)
+        lengths = torch.tensor(seq_lengths)
+
+        for i, seq_len in enumerate(seq_lengths):
+            x[i, :seq_len] = torch.randint(1, self.vocab_size, (seq_len,))
+
+        output = transformer(x, lengths)
+
+        # Check output shape
+        self.assertEqual(output.shape, (batch_size,))
+
+    def test_with_sample_data(self):
+        """Test TransformerEncoderRt with realistic sample data."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        # Create sample peptide sequences (using amino acid indices)
+        # A=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, K=9, L=10, M=11, N=12, P=13, Q=14, R=15, S=16, T=17, V=18, W=19, Y=20
+        sample_sequences = [
+            [1, 2, 3, 4, 5],  # AC DEF (length 5)
+            [6, 7, 8, 9, 10, 11, 12, 13],  # GHIKLMNP (length 8)
+            [14, 15, 16, 17, 18, 19, 20],  # QRSTVWY (length 7)
+        ]
+
+        batch_size = len(sample_sequences)
+        max_seq_len = max(len(seq) for seq in sample_sequences)
+        lengths = torch.tensor([len(seq) for seq in sample_sequences])
+
+        # Pad sequences to same length
+        x = torch.zeros(batch_size, max_seq_len, dtype=torch.long)
+        for i, seq in enumerate(sample_sequences):
+            x[i, : len(seq)] = torch.tensor(seq)
+
+        output = transformer(x, lengths)
+
+        # Check output shape
+        self.assertEqual(output.shape, (batch_size,))
+
+        # Check that outputs are not NaN or infinite
+        self.assertFalse(torch.isnan(output).any())
+        self.assertFalse(torch.isinf(output).any())
+
+    def test_gradient_flow(self):
+        """Test that gradients can flow through the model."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        batch_size = 2
+        seq_len = 10
+
+        x = torch.randint(1, self.vocab_size, (batch_size, seq_len))
+        lengths = torch.tensor([seq_len] * batch_size)
+
+        output = transformer(x, lengths)
+        loss = output.sum()
+        loss.backward()
+
+        # Check that gradients were computed for model parameters
+        has_gradients = any(p.grad is not None for p in transformer.parameters())
+        self.assertTrue(has_gradients)
+
+    def test_model_parameters(self):
+        """Test that the model has the expected number of parameters."""
+        transformer = TransformerEncoderRt(
+            vocab_size=self.vocab_size,
+            d_model=self.d_model,
+            dim_feedforward=self.dim_feedforward,
+            nhead=self.nhead,
+            dropout=self.dropout,
+            max_len=self.max_len,
+            num_layers=self.num_layers,
+        )
+
+        # Count parameters
+        total_params = sum(p.numel() for p in transformer.parameters())
+        trainable_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
+
+        # Check that we have parameters
+        self.assertGreater(total_params, 0)
+        self.assertEqual(total_params, trainable_params)  # All parameters should be trainable
 
 
 if __name__ == "__main__":
