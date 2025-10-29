@@ -44,7 +44,6 @@ class TransformerEncoderRt(nn.Module):
         super(TransformerEncoderRt, self).__init__()
 
         self.d_model = d_model
-        self.feedforward_dim = dim_feedforward
         self.dropout = nn.Dropout(dropout)
 
         self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
