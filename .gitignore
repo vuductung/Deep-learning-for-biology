@@ -100,3 +100,6 @@ dmypy.json
 
 # macOS
 .DS_Store
+
+# Data files
+data/
