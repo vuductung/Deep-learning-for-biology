@@ -1,3 +1,5 @@
+from itertools import islice
+
 import pandas as pd
 from Bio import SeqIO
 
