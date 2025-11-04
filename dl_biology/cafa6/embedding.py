@@ -5,7 +5,6 @@ import h5py
 import pandas as pd
 import torch
 from Bio import SeqIO
-from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer, EsmModel
 
@@ -145,38 +144,3 @@ class EmbeddingGenerator:
                 break
             else:
                 yield batch
-
-
-class Esm2EmbeddingDataset(Dataset):
-    def __init__(self, label_dir, embedding_dir):
-        super().__init__()
-        self.label_data = pd.read_csv(label_dir, delimiter="\t")
-        self.embedding_dir = embedding_dir
-
-        # Open the HDF5 file in read mode to obtain sequence IDs
-        with h5py.File(self.embedding_dir, "r") as h5f:
-            self.seq_ids = list(h5f.keys())
-
-        # Truncate the label data to only those entries with embeddings
-        self.label_data_trunc = self.label_data[self.label_data["EntryID"].isin(self.seq_ids)]
-        # Compute multi-hot labels as a tensor
-        self.y = torch.from_numpy(
-            pd.crosstab(self.label_data_trunc["EntryID"], self.label_data_trunc["term"])
-            .reindex(self.seq_ids, fill_value=0)
-            .values
-        ).float()
-        # Store terms to recover class order, if needed
-        self.terms = pd.unique(self.label_data_trunc["term"])
-
-    def __len__(self):
-        return len(self.seq_ids)
-
-    def __getitem__(self, idx):
-        seq_id = self.seq_ids[idx]
-
-        with h5py.File(self.embedding_dir, "r") as h5f:
-            embedding = torch.from_numpy(h5f[seq_id]["embedding"][()], dtype=torch.float32)
-
-        label = self.y[idx]
-
-        return {"seq_len": embedding.shape[0], "embedding": embedding, "label": label}
