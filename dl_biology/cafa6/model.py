@@ -78,7 +78,9 @@ class TransformerEncoderRt(nn.Module):
     def forward(self, x, lengths):
         # x (batch, seq_len)
         seq_len = x.size(1)
-        padding_mask = torch.arange(0, seq_len).reshape(1, -1) >= lengths.reshape(-1, 1)  # (batch, seq_len)
+        padding_mask = torch.arange(0, seq_len, device=x.device).reshape(1, -1) >= lengths.reshape(
+            -1, 1
+        )  # (batch, seq_len)
         x = self.embedding(x) * math.sqrt(self.d_model)  #  (batch, seq_len, d_model) (scale the data)
         x = self.pos_encoder(x)  # (batch, seq_len, d_model)
         x = self.transf_encoder(x, src_key_padding_mask=padding_mask)  # (batch, seq_len, d_model)
@@ -88,6 +90,62 @@ class TransformerEncoderRt(nn.Module):
         x = (x * mask).sum(dim=1) / lengths.unsqueeze(-1).float()  # (batch, d_model)
         x = self.output_head(x)  # x(batch, d_model) -> (batch, 1)
         return x.squeeze(-1)  # x(batch, 1) -> (batch, )
+
+
+class TransformerCafa6(nn.Module):
+    def __init__(
+        self,
+        d_model,
+        max_len,
+        dim_feedforward,
+        dropout,
+        nhead,
+        num_layers,
+        output_dim,
+        batch_first=True,
+        activation="relu",
+    ):
+        super(TransformerCafa6, self).__init__()
+
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            activation=activation,
+            batch_first=batch_first,
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer=self.encoder_layer,
+            num_layers=num_layers,
+        )
+        self.pos_encoder = PositionalEncoder(d_model, max_len, dropout)
+
+        self.output_head = nn.Sequential(
+            nn.Linear(d_model, d_model), nn.ReLU(), nn.Dropout(dropout), nn.Linear(d_model, output_dim), nn.Sigmoid()
+        )
+
+        self._init_weight()
+
+    def _init_weight(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+    def forward(self, x, lengths):
+        # creat padding mask
+        seq_length = x.size(1)
+        padding_mask = torch.arange(0, seq_length, device=x.device).reshape(1, -1) >= lengths.reshape(-1, 1)
+
+        # feedforward
+        x = self.pos_encoder(x)
+        x = self.transformer_encoder(x, src_key_padding_mask=padding_mask)
+
+        mask = ~padding_mask.unsqueeze(-1)
+        x = (x * mask).sum(dim=1) / lengths.unsqueeze(-1).float()
+
+        x = self.output_head(x)
+        return x.squeeze(-1)
 
 
 class PositionalEncoder(nn.Module):
