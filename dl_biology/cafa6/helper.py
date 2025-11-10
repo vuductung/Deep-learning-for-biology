@@ -1,7 +1,9 @@
 from itertools import islice
 
+import numpy as np
 import pandas as pd
 from Bio import SeqIO
+from scipy.sparse import csr_matrix
 
 from dl_biology.cafa6.constants import amino_acids
 
@@ -38,3 +40,13 @@ def extract_data_from_fasta(path):
         )
 
     return pd.DataFrame(data)
+
+
+def get_csr_matrix_from_terms(data):
+    entry_code = data["EntryID"].astype("category").cat.codes
+    term_code = data["EntryID"].astype("category").cat.codes
+
+    entry_labels = data["EntryID"].astype("category").cat.categories
+    term_labels = data["term"].astype("category").cat.categories
+    sparse_matrix = csr_matrix((np.ones(len(data)), (entry_code, term_code)))
+    return sparse_matrix.toarray(), entry_labels, term_labels
