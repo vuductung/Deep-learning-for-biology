@@ -99,7 +99,7 @@ class EmbeddingGenerator:
         self.model.to(self.device)
         self.model.eval()
 
-    def generate_embedding(self, output_dir, fasta_file, batch_size, max_length, max_n_sequences=1000):
+    def generate_embedding(self, output_dir, fasta_file, batch_size, max_length, name, max_n_sequences=1000):
         # create the path to save the embeddings
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -111,7 +111,7 @@ class EmbeddingGenerator:
             sequences = islice(sequences, max_n_sequences)
 
         # generate embedding from batches
-        h5_path = output_dir / "train_embeddings.h5"
+        h5_path = output_dir / f"{name}.h5"
 
         with h5py.File(h5_path, "w") as h5f:
             for batch in tqdm(self._batch_iterator(sequences, batch_size)):
