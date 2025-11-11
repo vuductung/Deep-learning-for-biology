@@ -44,7 +44,7 @@ def extract_data_from_fasta(path):
 
 def get_csr_matrix_from_terms(data):
     entry_code = data["EntryID"].astype("category").cat.codes
-    term_code = data["EntryID"].astype("category").cat.codes
+    term_code = data["term"].astype("category").cat.codes
 
     entry_labels = data["EntryID"].astype("category").cat.categories
     term_labels = data["term"].astype("category").cat.categories
