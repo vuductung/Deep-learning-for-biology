@@ -12,9 +12,9 @@
 
 # Setup
 module purge
-module load anaconda/3/2023.09
+module load python-waterboa/2024.06
 module load cuda/12.1
-source activate your_actual_env_name  # ← CHANGE THIS
+source venv/bin/activate  # ← CHANGE THIS
 
 mkdir -p logs
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
