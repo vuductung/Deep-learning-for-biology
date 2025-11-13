@@ -17,6 +17,11 @@ dependencies = [
     "torch>=2.0",
     "scikit-learn>=1.0",
     "iterative-stratification>=0.1",
+    "biopython>=1.83",
+    "scipy>=1.10",
+    "h5py>=3.9",
+    "tqdm>=4.66",
+    "transformers>=4.40",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +30,13 @@ dev = [
     "black>=24.0",
     "isort>=5.0",
     "pre-commit>=3.0",
+]
+notebooks = [
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "jax>=0.4",
+    "psm_utils>=0.3",
+    "deeplc>=2.4",
 ]
 
 [tool.setuptools]
