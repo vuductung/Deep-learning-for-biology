@@ -24,3 +24,17 @@ repos:
     hooks:
       - id: isort
         args: ["--profile", "black", "--line-length=120"]
+
+  - repo: local
+    hooks:
+      - id: check-missing-dependencies
+        name: Check for missing dependencies
+        entry: python
+        language: python
+        language_version: python3
+        additional_dependencies:
+          - tomlkit>=0.12
+          - tomli>=2.0
+        args: [scripts/check_missing_deps.py]
+        pass_filenames: false
+        always_run: true
