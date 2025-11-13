@@ -24,6 +24,7 @@ dependencies = [
     "tomli",
     "tomlkit",
     "torch>=2.0",
+    "lmdb",
 ]
 
 [project.optional-dependencies]
