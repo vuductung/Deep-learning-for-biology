@@ -14,7 +14,7 @@
 module purge
 module load python-waterboa/2024.06
 module load cuda/12.1
-source venv/bin/activate  # ← CHANGE THIS
+source ~/projects/cafa6/venv/bin/activate  # ← CHANGE THIS
 
 mkdir -p logs
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
