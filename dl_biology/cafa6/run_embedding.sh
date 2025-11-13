@@ -20,8 +20,8 @@ mkdir -p logs
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 # Configuration - CHANGE THESE FOR YOUR PROJECT
-FASTA_FILE="/ptmp/$USER/cafa6/train_sequences.fasta"  # ← CHANGE
-OUTPUT_DIR="/ptmp/$USER/cafa6/embeddings"             # ← CHANGE
+FASTA_FILE="/ptmp/dtvu/data/cafa6/train_sequences.fasta"  # ← CHANGE
+OUTPUT_DIR="/ptmp/dtvu/data/cafa6/embeddings"             # ← CHANGE
 BATCH_SIZE=32                                          # Adjust if OOM
 MODEL="facebook/esm2_t33_650M_UR50D"                  # Good default
 
