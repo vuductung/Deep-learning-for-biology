@@ -50,6 +50,7 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+nbs/
 
 # IPython
 profile_default/
@@ -103,3 +104,5 @@ dmypy.json
 
 # Data files
 data/
+kaggle-submission/
+pdf/
