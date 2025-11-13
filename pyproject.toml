@@ -23,7 +23,6 @@ dependencies = [
     "transformers>=4.40",
     "tomli",
     "tomlkit",
-    "tomllib",
     "torch>=2.0",
 ]
 

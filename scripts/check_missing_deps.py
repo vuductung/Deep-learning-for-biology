@@ -43,6 +43,7 @@ PACKAGE_SUGGESTIONS = {
 EXTRA_STDLIB_MODULES = {
     "builtins",
     "dataclasses",
+    "tomllib",
     "typing_extensions",  # available in some stdlib distributions
 }
 
