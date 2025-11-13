@@ -24,7 +24,7 @@ dependencies = [
     "tomli",
     "tomlkit",
     "tomllib",
-    "torch",
+    "torch>=2.0",
 ]
 
 [project.optional-dependencies]
