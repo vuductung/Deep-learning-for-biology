@@ -25,6 +25,7 @@ class EmbeddingGenerator:
         self.device = device
         self.model.to(device)
         self.model.eval()
+        self.model_name = model_checkpoint.split("/")[-1]
         print("Model loaded!")
 
     def count_sequences(self, fasta_file):
@@ -55,7 +56,7 @@ class EmbeddingGenerator:
         print(f"Rank {rank}: Processing sequences {start_idx}-{end_idx} ({n_seqs} total)")
 
         # Open LMDB
-        lmdb_path = output_dir / f"embeddings_rank{rank}.lmdb"
+        lmdb_path = output_dir / f"{self.model_name}_embeddings_rank{rank}.lmdb"
         env = lmdb.open(str(lmdb_path), map_size=200 * 1024**3, writemap=True)
 
         # Stream through FASTA (memory efficient!)
@@ -117,7 +118,7 @@ class EmbeddingGenerator:
             yield batch
 
 
-def merge_lmdb(output_dir, world_size):
+def merge_lmdb(output_dir, world_size, model_name):
     """Merge rank files into single LMDB."""
 
     output_dir = Path(output_dir)
@@ -131,7 +132,7 @@ def merge_lmdb(output_dir, world_size):
     txn = env_final.begin(write=True)
 
     for rank in range(world_size):
-        rank_path = output_dir / f"embeddings_rank{rank}.lmdb"
+        rank_path = output_dir / f"{model_name}_embeddings_rank{rank}.lmdb"
 
         if not rank_path.exists():
             print(f"WARNING: {rank_path} not found, skipping")
@@ -179,7 +180,8 @@ def main():
 
     try:
         if args.merge:
-            merge_lmdb(args.output, args.world_size)
+            model_name = args.model.split("/")[-1]
+            merge_lmdb(args.output, args.world_size, model_name)
         else:
             if not args.fasta:
                 raise ValueError("--fasta required for generation mode")

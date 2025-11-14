@@ -43,15 +43,15 @@ echo "======================================"
 
 # Generate embeddings - FIXED RANK ASSIGNMENT
 srun --ntasks=$SLURM_NTASKS \
---output=logs/embed_%j_%t.out \
---error=logs/embed_%j_%t.err \
-bash -c "python embedding.py \
---fasta $FASTA_FILE \
---output $OUTPUT_DIR \
---batch_size $BATCH_SIZE \
---model $MODEL \
---rank \$SLURM_PROCID \
---world_size $SLURM_NTASKS"
+    --output=logs/embed_%j_%t.out \
+    --error=logs/embed_%j_%t.err \
+    bash -c "python embedding.py \
+        --fasta $FASTA_FILE \
+        --output $OUTPUT_DIR \
+        --batch_size $BATCH_SIZE \
+        --model $MODEL \
+        --rank \$SLURM_PROCID \
+        --world_size $SLURM_NTASKS"
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Generation failed!"
@@ -60,11 +60,12 @@ fi
 
 echo "Generation complete! Merging..."
 
-# Merge - FIXED FILENAME
+# Merge
 python embedding.py \
---merge \
---output $OUTPUT_DIR \
---world_size $SLURM_NTASKS
+    --merge \
+    --output $OUTPUT_DIR \
+    --world_size $SLURM_NTASKS \
+    --model $MODEL
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Merge failed!"
