@@ -10,10 +10,8 @@
 #SBATCH --output=logs/embed_%j.out
 #SBATCH --error=logs/embed_%j.err
 
-# ===== BEST PRACTICE: Change to script directory first =====
+# Change to script directory
 cd /raven/u/dtvu/projects/cafa6/dl_biology/cafa6 || exit 1
-# OR use the automatic variable:
-# cd $SLURM_SUBMIT_DIR || exit 1
 
 # Setup
 module purge
@@ -22,9 +20,11 @@ module load cuda/12.1
 source /raven/u/dtvu/projects/cafa6/venv/bin/activate
 
 mkdir -p logs
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-# Configuration - Use absolute paths for DATA
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export PYTHONUNBUFFERED=1  # Prevent output buffering
+
+# Configuration
 FASTA_FILE="/ptmp/dtvu/data/cafa6/train_sequences.fasta"
 OUTPUT_DIR="/ptmp/dtvu/data/cafa6/embeddings"
 BATCH_SIZE=32
@@ -41,17 +41,17 @@ echo "Output: $OUTPUT_DIR"
 echo "Start: $(date)"
 echo "======================================"
 
-# Generate embeddings (script is now in current directory)
+# Generate embeddings - FIXED RANK ASSIGNMENT
 srun --ntasks=$SLURM_NTASKS \
 --output=logs/embed_%j_%t.out \
 --error=logs/embed_%j_%t.err \
-python embedding.py \
+bash -c "python embedding.py \
 --fasta $FASTA_FILE \
 --output $OUTPUT_DIR \
 --batch_size $BATCH_SIZE \
 --model $MODEL \
---rank $SLURM_PROCID \
---world_size $SLURM_NTASKS
+--rank \$SLURM_PROCID \
+--world_size $SLURM_NTASKS"
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Generation failed!"
@@ -60,8 +60,8 @@ fi
 
 echo "Generation complete! Merging..."
 
-# Merge
-python generate_embeddings.py \
+# Merge - FIXED FILENAME
+python embedding.py \
 --merge \
 --output $OUTPUT_DIR \
 --world_size $SLURM_NTASKS
