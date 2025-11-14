@@ -45,7 +45,7 @@ echo "======================================"
 srun --ntasks=$SLURM_NTASKS \
 --output=logs/embed_%j_%t.out \
 --error=logs/embed_%j_%t.err \
-python generate_embeddings.py \
+python embedding.py \
 --fasta $FASTA_FILE \
 --output $OUTPUT_DIR \
 --batch_size $BATCH_SIZE \
